@@ -1,0 +1,6 @@
+{"timestamp": "2026-01-02T03:04:05Z", "type": "session_meta", "payload": {"id": "cdx-1", "cwd": "/home/dev/proj", "model": "gpt-5-codex"}}
+{"timestamp": "2026-01-02T03:04:06Z", "type": "event_msg", "payload": {"type": "user_message", "message": "跑一下测试"}}
+{"timestamp": "2026-01-02T03:04:07Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "好，先看结构。"}}
+{"timestamp": "2026-01-02T03:04:08Z", "type": "response_item", "payload": {"type": "function_call", "name": "shell", "arguments": "{\"command\":\"pytest -q\"}", "call_id": "c1"}}
+{"timestamp": "2026-01-02T03:04:09Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "c1", "output": "2 failed, 5 passed"}}
+{"timestamp": "2026-01-02T03:04:10Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "两个失败，去看断言。"}}

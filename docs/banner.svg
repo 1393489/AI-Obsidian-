@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="280" viewBox="0 0 1000 280" role="img" aria-label="memloom — turn your AI coding sessions into a navigable memory vault">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#132238"/>
+    </linearGradient>
+    <linearGradient id="fish" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fd4ff"/>
+      <stop offset="1" stop-color="#3f8fd6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="280" fill="url(#bg)"/>
+  <g stroke="#1d3350" stroke-width="1">
+    <path d="M0 210 H1000 M0 240 H1000"/>
+  </g>
+
+  <!-- the fish -->
+  <g transform="translate(120,140)">
+    <path d="M-78 0 C-64 -46 -18 -62 18 -58 C54 -54 78 -30 84 0 C78 30 54 54 18 58 C-18 62 -64 46 -78 0 Z" fill="url(#fish)" opacity="0.95"/>
+    <path d="M-78 0 L-116 -26 L-108 0 L-116 26 Z" fill="#2f76b8"/>
+    <circle cx="52" cy="-14" r="8" fill="#0b1220"/>
+    <circle cx="55" cy="-17" r="2.6" fill="#eaf6ff"/>
+    <path d="M30 26 q14 8 28 0" stroke="#0b1220" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
+    <path d="M-6 -58 q10 -22 26 -16" stroke="#9fe4ff" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- noodles of memory trailing behind -->
+    <g stroke="#4c8fc0" stroke-width="2" fill="none" opacity="0.65">
+      <path d="M-116 -6 q-40 -10 -70 4 q-26 12 -52 2"/>
+      <path d="M-116 6 q-38 12 -66 0 q-24 -10 -46 -2"/>
+    </g>
+  </g>
+
+  <text x="230" y="132" font-family="ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial" font-size="82" font-weight="700" fill="#eaf6ff" letter-spacing="-2">memloom</text>
+  <text x="236" y="176" font-family="ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial" font-size="25" fill="#8fb6d8">你的 AI 编程会话，织成一本能翻的记忆</text>
+  <text x="236" y="212" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="17" fill="#5f87a8">DSH · Claude Code · Codex  →  Obsidian vault, no LLM, no cloud</text>
+</svg>
