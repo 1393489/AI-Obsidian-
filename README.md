@@ -85,7 +85,7 @@ pip install -e ".[zstd]"      # 顺手装 pyzstd，解压更快（不是必需�
 每次 `build` 都在输出目录里留一份 `<out>/.memloom/`：一个 `state.json`（每条档案的 size + mtime_ns + 适配器名）和一份解析结果的缓存。下次跑只有**真的变过的档案**才会被重新解析，其余直接读缓存。缓存只写在你指定的输出目录里，**绝不写进你的档案目录**（那些目录本来就是只读的）。
 
 ```
-$ memloom build --out vault        # 114 个真实会话
+$ memloom build --out vault        # 本机实测：116 个档案 → 114 个会话
 页面   202（本次改动 202）
 缓存   复用 0 / 新解析 114
 耗时   10.3s
@@ -102,8 +102,8 @@ $ memloom build --out vault        # 什么都没变
 
 | 来源 | 路径 | 状态 |
 |---|---|---|
-| **DSH** | `~/.dsh/sessions/**/*.zstd` | ✅ 已验证（87 个真实档案 / 59 MB） |
-| **Claude Code** | `~/.claude/projects/<project>/*.jsonl` | ✅ 已验证（41 个真实文件，最大 125 MB） |
+| **DSH** | `~/.dsh/sessions/**/*.zstd` | ✅ 已验证（本机 89 个真实档案 / 69 MB） |
+| **Claude Code** | `~/.claude/projects/<project>/*.jsonl` | ✅ 已验证（本机 27 个真实文件 / 219 MB，最大一个 120 MB） |
 | **Codex** | `~/.codex/sessions/**/*.jsonl` | ⚠️ beta：适配器按已知格式写好，但本机没有 Codex 档案，**未经真实数据验证** |
 
 DSH 的 `.zstd` 是多 frame 拼接的老格式，标准库解不开。memloom 按顺序尝试：`pyzstd` → Python 3.14+ 的 `compression.zstd` → 本机 `node` 的 `zlib.zstdDecompressSync` → `zstd` 命令行；四条路都不通时给一句能照做的报错，而不是 traceback。
