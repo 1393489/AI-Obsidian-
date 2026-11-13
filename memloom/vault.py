@@ -14,6 +14,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 from .adapters import all_default_roots, detect_adapter, get_adapter
 from .group import SessionFacts, analyze, group_projects, group_topics
 from .model import Session
+from .state import Cache
 from .render import (
     DIR_ARCHIVE,
     DIR_PROJECT,
@@ -31,7 +32,7 @@ from .render import (
     session_page_name,
     topic_page_name,
 )
-from .util import ensure_dir, within_days
+from .util import ensure_dir, sha1, within_days
 
 DEFAULT_TITLE = "记忆库"
 DEFAULT_SOURCE = "memloom"
@@ -72,8 +73,13 @@ def scan(roots: Optional[Sequence[Tuple[str, str]]] = None,
     return pairs
 
 
-def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False) -> Tuple[Dict[str, Session], List[str]]:
-    """Parse every archive; returns ``(sessions_by_id, problems)``."""
+def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
+             cache: Optional[Cache] = None) -> Tuple[Dict[str, Session], List[str]]:
+    """Parse every archive; returns ``(sessions_by_id, problems)``.
+
+    With a ``cache``, files whose size/mtime are unchanged are restored from disk instead
+    of being parsed again -- zstd decompression is the expensive part of a build.
+    """
     sessions: Dict[str, Session] = {}
     problems: List[str] = []
     for name, path in pairs:
@@ -81,11 +87,16 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False) -> Tuple[Dic
         if adapter is None:
             problems.append(f"{path}: 未知适配器 {name}")
             continue
-        try:
-            s = adapter.load(path)
-        except Exception as exc:  # a broken file must never abort the whole build
-            problems.append(f"{path}: {type(exc).__name__}: {exc}")
-            continue
+        s: Optional[Session] = cache.lookup(path, name) if cache is not None else None
+        if s is None:
+            try:
+                s = adapter.load(path)
+            except Exception as exc:  # a broken file must never abort the whole build
+                problems.append(f"{path}: {type(exc).__name__}: {exc}")
+                continue
+            if s is not None and not s.is_empty():
+                if cache is not None:
+                    cache.store(path, name, s)
         if s is None or s.is_empty():
             problems.append(f"{path}: 没有可读的对话内容")
             continue
@@ -102,8 +113,42 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False) -> Tuple[Dic
 
 # ------------------------------------------------------------------ writing
 
+def _uniq_page_names(pages: Sequence[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """Two pages must never share one path -- the second would silently overwrite the first.
+
+    Generated names come from truncated titles, so unrelated topics can collide
+    (``踩坑-Failed to authenticate….md``). Kept pages without a conflict keep their name;
+    a colliding page gets a short content hash appended; an identical duplicate is dropped.
+    """
+    originals = {rel for rel, _ in pages}
+    taken: Dict[str, str] = {}
+    out: List[Tuple[str, str]] = []
+    for rel, text in pages:
+        if rel in taken:
+            if taken[rel] == text:
+                continue
+            stem, ext = os.path.splitext(rel)
+            for width in (4, 6, 8, 12):
+                cand = f"{stem}-{sha1(text.encode('utf-8'))[:width]}{ext}"
+                if cand not in taken and cand not in originals:
+                    rel = cand
+                    break
+            else:  # pragma: no cover - would need four pages with identical prefixes
+                cand = f"{stem}-{sha1(text.encode('utf-8'))[:16]}{ext}"
+                rel = cand
+        taken[rel] = text
+        out.append((rel, text))
+    return out
+
+
 def _write(out_dir: str, rel: str, text: str) -> int:
-    """Write ``text`` to ``rel`` if it changed. Returns bytes-ish count change flag."""
+    """Write ``text`` to ``rel`` if it changed. Returns 1 when the file was rewritten.
+
+    CRLF is normalised to LF first: prompts and tool output keep the CRLF they came with,
+    and a page holding a stray ``\\r\\n`` would look "changed" on every single rebuild
+    (the read side applies universal newlines, the write side must match it).
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     path = os.path.join(out_dir, rel)
     ensure_dir(os.path.dirname(path))
     try:
@@ -155,12 +200,18 @@ def build(
     split_threshold: int = 12,
     dry_run: bool = False,
     quiet: bool = False,
+    full: bool = False,
 ) -> dict:
     started = time.time()
     pairs = scan(roots, only)
+    cache: Optional[Cache] = Cache(out_dir).load()
+    if full:
+        cache.clear()
+    if dry_run:
+        cache.read_only = True
     if not quiet:
         print(f"发现 {len(pairs)} 个会话存档，开始解析…", flush=True)
-    sessions, problems = load_all(pairs, quiet=quiet)
+    sessions, problems = load_all(pairs, quiet=quiet, cache=cache)
 
     # filters
     kept: Dict[str, Session] = {}
@@ -208,6 +259,7 @@ def build(
         rel = f"{DIR_TOPIC}/{topic_page_name(t)}.md"
         pages.append((rel, render_topic(t, kept, source_label, tag_prefix)))
     pages.append((f"{DIR_ARCHIVE}/README.md", render_archive_note(source_label, tag_prefix, kept)))
+    pages = _uniq_page_names(pages)
 
     written = 0
     if not dry_run:
@@ -218,7 +270,8 @@ def build(
         pruned = _prune(out_dir, keep)
     else:
         pruned = 0
-
+    if cache is not None:
+        cache.save()
     ok = bool(kept)
     if not ok and not quiet:
         print("注意：没有解析出任何可用的会话 —— 检查 --root 是否指向了存档目录。", flush=True)
@@ -233,6 +286,9 @@ def build(
         "pages": len(pages),
         "written": written,
         "pruned": pruned,
+        "reused": cache.reused,
+        "parsed": cache.parsed,
+        "full": full,
         "out": out_dir,
         "seconds": round(time.time() - started, 2),
         "problems": problems[:20],

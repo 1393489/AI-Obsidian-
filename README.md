@@ -70,8 +70,27 @@ pip install -e ".[zstd]"      # 顺手装 pyzstd，解压更快（不是必需�
 | `memloom build --root dsh=~/.dsh/sessions` | 只扫指定来源；可重复传 `--root` |
 | `memloom build --since 30 --min-turns 3` | 只收最近 30 天、且轮次 ≥ 3 的会话 |
 | `memloom build --dry-run` | 只算不写，看看会生成多少页 |
+| `memloom build --full` | 忽略增量缓存，全部重新解析 |
 
 `--adapter auto|dsh|claude-code|codex` 强制指定某个适配器（默认按文件特征自动判断）。
+
+### 第二次跑为什么快
+
+每次 `build` 都在输出目录里留一份 `<out>/.memloom/`：一个 `state.json`（每条档案的 size + mtime_ns + 适配器名）和一份解析结果的缓存。下次跑只有**真的变过的档案**才会被重新解析，其余直接读缓存。缓存只写在你指定的输出目录里，**绝不写进你的档案目录**（那些目录本来就是只读的）。
+
+```
+$ memloom build --out vault        # 114 个真实会话
+页面   202（本次改动 202）
+缓存   复用 0 / 新解析 114
+耗时   10.3s
+
+$ memloom build --out vault        # 什么都没变
+页面   202（本次改动 0）
+缓存   复用 114 / 新解析 0
+耗时   0.8s
+```
+
+写盘也是增量的：内容没变就不碰文件、只删带生成标记的旧页 —— 所以重复跑是零写入，Obsidian 不会因为一次重建把你看的页面刷掉。缓存坏了、换了版本、想强制重来：`--full` 或直接删掉 `<out>/.memloom/`。
 
 ## 支持哪些档案
 
@@ -100,7 +119,6 @@ memloom 的做法：
 
 ## 已知局限（写在这里，不藏在代码里）
 
-- **不增量**：每次 `build` 都重新解析全部档案。写盘是增量的（内容没变就不碰文件、只删带生成标记的旧页），所以第二次跑是零写入；但解析时间随档案量线性增长。
 - **主题名是规则拼出来的**，可能不好听（`踩坑-Error- ECONNREFUSED`）。要更像人话的名字得等 v0.2 的可选 LLM 步骤。
 - **页面不含 LLM 撰写的内容**。所有正文都来自你的 prompt、模型的回复、工具输出，和规则抽取 —— `99-使用说明.md` 里也这么写。
 - **Codex 适配器未验证**（见上表）。
@@ -112,12 +130,12 @@ memloom 的做法：
 python -m unittest discover -s tests -t .
 ```
 
-36 个测试，跑 0.1 秒。fixture 是从真实档案里裁剪出来的（DSH 的紧凑事件流、Claude 的 `.jsonl`、Codex 的 rollout），不是手编的假数据 —— 格式变了测试会先红。
+47 个测试，跑 0.5 秒。fixture 是从真实档案里裁剪出来的（DSH 的紧凑事件流、Claude 的 `.jsonl`、Codex 的 rollout），不是手编的假数据 —— 格式变了测试会先红。
 
 ## 路线图
 
-- **v0.1**（本仓库）：三种适配器、规则抽取、项目/主题聚类、vault 渲染、`doctor` / `scan` / `build`。
-- **v0.2**：增量扫描（`.memloom/state.json` 记 mtime+size+hash）、`--enrich` 可选的 LLM 主题命名、更多来源（Cursor、Gemini CLI、Copilot）。
+- **v0.1**（本仓库）：三种适配器、规则抽取、项目/主题聚类、vault 渲染、增量解析（`.memloom/` 状态 + 解析缓存）、`doctor` / `scan` / `build`。
+- **v0.2**：`--enrich` 可选的 LLM 主题命名、更多来源（Cursor、Gemini CLI、Copilot）、跨机器共享缓存。
 - **v0.3**：把「同一个 bug 在三个项目里复发过」这类跨项目线索自动挖出来。
 
 ## 许可

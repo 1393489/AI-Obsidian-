@@ -77,6 +77,7 @@ def cmd_build(args) -> int:
         split_threshold=args.split,
         dry_run=args.dry_run,
         quiet=args.quiet,
+        full=args.full,
     )
 
     if args.json:
@@ -98,6 +99,7 @@ def cmd_build(args) -> int:
             print(f"         · 另有 {len(names) - 10} 个")
     if result["pruned"]:
         print(f"清理   {result['pruned']} 个过期页面")
+    print("缓存   复用 {} / 新解析 {}".format(result["reused"], result["parsed"]))
     print(f"耗时   {result['seconds']}s")
     if result["problems"]:
         print()
@@ -243,6 +245,7 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--source-label", default="memloom", help="页面 front-matter 里的「来源」字段")
     b.add_argument("--tag-prefix", default="memloom", help="Obsidian 标签前缀")
     b.add_argument("--dry-run", action="store_true", help="只统计，不写文件")
+    b.add_argument("--full", action="store_true", help="忽略增量缓存，全部重新解析")
     b.add_argument("--json", action="store_true", help="输出机器可读结果")
     b.add_argument("--quiet", "-q", action="store_true", help="不打印每个文件")
     b.set_defaults(func=cmd_build)

@@ -79,6 +79,8 @@ _UUID = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 _HEX = re.compile(r"\b0x[0-9a-fA-F]+\b")
 _TS = re.compile(r"\b\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?)?\b")
 _NUM = re.compile(r"\b\d+(?:\.\d+)?\b")
+# request ids / trace ids: long alphanumeric blobs that always contain a digit
+_LONG_ID = re.compile(r"\b(?=[A-Za-z]*\d)[A-Za-z0-9]{18,}\b")
 _INPATH = re.compile(r"(?:[A-Za-z]:)?[\\/][^\s\"'`<>|]+")
 
 
@@ -229,6 +231,7 @@ def fingerprint(line: str, width: int = 150) -> str:
     """Collapse volatile parts so the same failure groups across sessions."""
     s = (line or "").strip()
     s = _UUID.sub("<uuid>", s)
+    s = _LONG_ID.sub("<id>", s)
     s = _TS.sub("<ts>", s)
     s = _HEX.sub("0xX", s)
     s = _INPATH.sub("<path>", s)

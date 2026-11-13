@@ -66,12 +66,30 @@ vault.py           扫盘、并行加载、只写变化、删过期生成页
 - 内容没变就不写（逐文件比较字符串），所以第二次 `build` 的 `written` 是 0，mtime 不动，Obsidian 不会闪。
 - 归档目录（默认 `90-原文归档/`）**只放一份 README 说档案在哪**，不复制原文：几十上百 MB 的 `.zstd` 复制进 vault 会让 git 和同步都难受。
 
+## 增量解析
+
+解析很贵（解压 + 逐事件解析），所以 `build` 会在**输出目录**里留一份缓存：`<out>/.memloom/state.json` 记每条档案的 `size`、`mtime_ns` 和适配器名；`<out>/.memloom/cache/<sha1(路径)[:16]>.json` 存这条档案解析出来的 `Session`。
+
+- **命中条件**：`size` 与 `mtime_ns` 都没变、适配器名没变。只 stat，不读文件，所以「检查 114 个档案要不要重解析」几乎不花时间。内容变了但 size/mtime 都没变的情况理论上存在（同一秒内改同长度），实际可以忽略 —— 真要保险就 `--full`。
+- **失效路径**：`state.json` 带 `version: 1`，版本不匹配就整库重解析；换了 `--adapter` 或适配器代码变了（适配器名写在条目里）也只重解析那一条；缓存文件写坏了解析失败会当作 miss。
+- **写在哪**：永远在 `<out>/.memloom/`，绝不在档案目录里。档案目录对本工具只读，这是设计约束。
+- **原子性**：缓存单文件先写 `.tmp` 再 `os.replace`；`state.json` 同样。中途 Ctrl-C 不会留下半个 JSON。
+- **`--dry-run`**：只读缓存，不写缓存也不写 `state.json`（`Cache.read_only`），所以干跑不会污染下一次的真实构建。
+- **序列化坑**：`Session.started_at` / `ended_at` / `Turn.at` 是带时区的 `datetime`，JSON 里必须 `.isoformat()`、读回来 `datetime.fromisoformat()`，否则往返一次就变成字符串，下游 `strftime` 直接炸。
+
 ## 性能
 
-真实数据（本机）：DSH 87 个 `.zstd` / 59 MB 解码 7.6 s，加上 Claude Code 41 个文件后全量 12.4 s / 113 会话 / 202 页。解压是绝对瓶颈，所以 `zstd_frames` 优先找 `pyzstd` / `node`，纯 Python 兜底根本不存在（也不该存在）。
+真实数据（本机）：DSH 87 个 `.zstd` / 59 MB 解码 7.6 s，加上 Claude Code 41 个文件后全量 10.3 s / 114 会话 / 202 页。解压是绝对瓶颈，所以 `zstd_frames` 优先找 `pyzstd` / `node`，纯 Python 兜底根本不存在（也不该存在）。
+
+增量构建（同一个库，档案没变）：**0.8–2.0 s**，且 `written = 0`。第一次增量略慢一点（要把缓存反序列化回 `Session`），之后更快。
+
+## 一个真实的坑：CRLF 让页面「永远在变」
+
+prompt 和工具输出里带着 Windows 的 `\r\n`。写文件时如果用 `newline="\n"` 原样写出去，下次读回来时 Python 的 universal newline 会把 `\r\n` 折叠成 `\n`，字符串比较就永远不相等 —— 于是每次构建都重写那几页，`written` 永远不是 0。修法是写入前把 `\r\n` / 单独的 `\r` 统一成 `\n`，读写两侧用同一套换行语义。
+
+同类的假变更还有「两个不同主题撞同一个文件名」：主题名是从错误首行截断来的，`request id` 不同但前缀相同就会撞名，后写的把先写的覆盖，于是这两页每轮都在互相覆盖。修法有两层：`fingerprint()` 把长 id 归一成 `<id>`（治本，让它们本来就是同一个主题），渲染完再对 rel 做一次唯一化，冲突的页面追加内容哈希后缀，完全相同的重复页直接丢弃。
 
 ## 不做什么
 
 - 不做语义搜索（用 Obsidian 自己的搜索）。
-- 不做增量解析（v0.2 用 `.memloom/state.json` 记 mtime + size + hash）。
 - 不改、不移动、不在档案目录里写任何文件。`~/.dsh/sessions` 对本工具是只读的，这是设计约束，不是实现疏漏。
