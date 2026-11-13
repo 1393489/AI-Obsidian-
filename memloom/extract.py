@@ -149,10 +149,13 @@ def path_component(path: str, depth: int = 1) -> str:
     """Coarse bucket for a path: last ``depth`` components without extension.
 
     ``D:/work/app/src/render.ts`` -> ``src/render`` (depth=2). Drive letters and other
-    single-letter roots are dropped so Windows and POSIX checkouts agree.
+    single-letter roots are dropped so Windows and POSIX checkouts agree, and leading dots
+    are stripped so ``.claude/settings`` and ``claude/settings`` land in the same bucket
+    instead of becoming two near-duplicate topics.
     """
     parts = [x for x in _norm_path(path).split("/") if x]
     parts = [x for x in parts if not re.match(r"^[A-Za-z]:$", x)]
+    parts = [x.lstrip(".") or x for x in parts]
     if not parts:
         return ""
     parts = parts[-depth:]

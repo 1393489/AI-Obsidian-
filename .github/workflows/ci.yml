@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Unit tests (no third-party dependencies)
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: CLI smoke test on the bundled fixtures
+        run: |
+          python -m memloom doctor
+          python -m memloom build --out out/ci --root tests/fixtures --quiet --json > first.json
+
+      - name: Second build must parse nothing and write nothing
+        run: |
+          python -m memloom build --out out/ci --root tests/fixtures --quiet --json > second.json
+          python -c "import json;d=json.load(open('second.json',encoding='utf-8'));assert d['written']==0,d;assert d['parsed']==0,d;assert d['reused']>0,d;print('incremental ok:',d['reused'],'reused, 0 parsed, 0 written')"
+
+      - name: --full must rebuild from scratch
+        run: |
+          python -m memloom build --out out/ci --root tests/fixtures --quiet --json --full > full.json
+          python -c "import json;d=json.load(open('full.json',encoding='utf-8'));assert d['reused']==0,d;assert d['parsed']>0,d;print('full ok:',d['parsed'],'parsed')"
+
+      - name: Install check (editable, no extras)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m memloom scan
