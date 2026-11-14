@@ -6,7 +6,7 @@
 轮次: 6
 工具调用: 151
 模型: deepseek-account/deepseek-flash
-工作目录: C:\Users\you\Documents\deepseek-harness\default-workspace
+工作目录: ~workspace
 来源: memloom
 tags:
   - memloom/会话记录
@@ -18,9 +18,9 @@ tags:
 
 > 预设 `standard` · 版本 `4`
 
-**项目**：[[default-workspace]]
+**项目**：[[default-workspace · memloom]]
 
-**相关主题**：[[踩坑-Error： grep search failed (exit N)： rg…]] · [[代码-app.asar／dsh]] · [[工具-find]] · [[工具-ask_user_question]] · [[工具-load_workspace_dependencies]] · [[工具-present]] · [[工具-browser_call]] · [[工具-copy]] · [[工具-web_fetch]] · [[工具-browser_index]]
+**相关主题**：[[踩坑-Error： grep search failed (exit N)： rg…]] · [[代码-app.asar／dsh]] · [[工具-find]] · [[工具-ask_user_question]] · [[工具-load_workspace_dependencies]] · [[工具-present]] · [[工具-browser_call]] · [[工具-copy]] · [[工具-web_fetch]]
 
 ## 用户请求一览
 
@@ -51,31 +51,31 @@ tags:
 
 ## 涉及文件
 
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/assemble.py` ×10
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/build_vault.py` ×5
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/build_pages.py` ×3
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/sync.bat` ×3
+- `~workspace/notes/assemble.py` ×10
+- `~workspace/notes/build_vault.py` ×5
+- `~workspace/notes/build_pages.py` ×3
+- `~workspace/sync.bat` ×3
 - `D:/Deepseek/resources/app.asar/dsh` ×3
 - `/.dsh/AGENTS.md` ×3
 - `dsh/AGENTS.md` ×3
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/split_sessions.py` ×2
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/sync_target.txt` ×2
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/sync.ps1` ×2
+- `~workspace/notes/split_sessions.py` ×2
+- `~workspace/notes/sync_target.txt` ×2
+- `~workspace/notes/sync.ps1` ×2
 - `.agents/AGENTS.md` ×2
 - `.dsh/AGENTS.md` ×2
 - `/.dsh/sessions` ×2
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/vault/20-会话/2026-10-28-f9b9f4f0-vibecoding大赏：5个Deepseek作品.md`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/micro/session-a6ed89fe-2991-4941-90b9-28e6b0125f71_h1.md`
-- `D:/知识库/Kirito的知识库/DSH记忆库/10-项目/抖音链接读取与浏览器插件.md)、[DSH记忆库搭建](D:/知识库/Kirito的知识库/DSH记忆库/10-项目/DSH记忆库搭建.md)，以及新增的坑：`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/sync.log)，任一步失败就返回非零码，不会留下只同步一半的状态。`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-51a3bea5.p1.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-51a3bea5.p2.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-51a3bea5.p3.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-51a3bea5.p4.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-bbded48a.p2.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-4e1a4267.a.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-4e1a4267.b.json`
-- `C:/Users/you/Documents/deepseek-harness/default-workspace/_tw/summaries/session-747fd253.json`
+- `~workspace/notes/vault/20-会话/2026-10-28-f9b9f4f0-vibecoding大赏：5个Deepseek作品.md`
+- `~workspace/notes/micro/session-a6ed89fe-2991-4941-90b9-28e6b0125f71_h1.md`
+- `~/notes/vault/10-项目/抖音链接读取与浏览器插件.md)、[DSH记忆库搭建](~/notes/vault/10-项目/DSH记忆库搭建.md)，以及新增的坑：`
+- `~workspace/notes/sync.log)，任一步失败就返回非零码，不会留下只同步一半的状态。`
+- `~workspace/notes/summaries/session-51a3bea5.p1.json`
+- `~workspace/notes/summaries/session-51a3bea5.p2.json`
+- `~workspace/notes/summaries/session-51a3bea5.p3.json`
+- `~workspace/notes/summaries/session-51a3bea5.p4.json`
+- `~workspace/notes/summaries/session-bbded48a.p2.json`
+- `~workspace/notes/summaries/session-4e1a4267.a.json`
+- `~workspace/notes/summaries/session-4e1a4267.b.json`
+- `~workspace/notes/summaries/session-747fd253.json`
 
 ## 常用命令
 
@@ -113,9 +113,9 @@ Error: subagent limit reached (active child limit: 8); wait for an existing chil
 
 **已查明（第一步结论）**
 - **规则文件**：DSH 支持 `AGENTS.md` / `CLAUDE.md` / `AGENTS.local.md` / `CLAUDE.local.md`，加载位置包括工作区根目录、`.dsh/AGENTS.md`、`.agents/AGENTS.md`、`~/.dsh/AGENTS.md`（DSH_HOME 级，跨项目全局生效）。
-- **文件权限**：当前沙箱为 `workspace-write`，工作区内可自由读写；工作区外（如 `D:\知识库\Kirito的知识库`）**写入被拒绝**（实测 `Set-Content` 报 AccessDenied），需申请 `danger-full-access` 才行。
+- **文件权限**：当前沙箱为 `workspace-write`，工作区内可自由读写；工作区外（如 `~\notes\notes`）**写入被拒绝**（实测 `Set-Content` 报 AccessDenied），需申请 `danger-full-access` 才行。
 - **定时任务**：支持会话内定时提醒（间隔/每日/每周/cron），非独立后台守护进程。
-- **会话记录**：共 6 个会话，`~\.dsh\sessions\*.zstd` 为多帧 zstd，已全部解压成功到 `_tw\raw\`（合计 33 MB，含完整 user/assistant/reasoning/tool 调用链）。 …
+- **会话记录**：共 6 个会话，`~\.dsh\sessions\*.zstd` 为多帧 zstd，已全部解压成功到 `notes\raw\`（合计 33 MB，含完整 user/assistant/reasoning/tool 调用链）。 …
 
 工具：`pwsh`×30 · `subagent`×21 · `write`×15 · `read`×4 · `send_message`×2 · `load_workspace_dependencies`×1 · `grep`×1 · `ask_user_question`×1 · `edit`×1 · `interrupt_agent`×1（其中 3 次失败）
 
@@ -135,11 +135,11 @@ Error: subagent limit reached (active child limit: 8); wait for an existing chil
 
 **助手**：
 
-继续。先把已到手的提炼结果写进磁盘，再最终汇总到知识库。先看一下构建脚本里摘要的读取格式。
+继续。先把已到手的提炼结果写进磁盘，再最终汇总到notes。先看一下构建脚本里摘要的读取格式。
 
 我会把剩余提炼结果写入磁盘（会话2 的 p2/p3/p4、会话4、会话1）。
 
-沙箱已放开为 danger-full-access，我可以直接写到 D 盘知识库，不必再申请授权。现在把最后一份会话摘要保存下来。
+沙箱已放开为 danger-full-access，我可以直接写到 D 盘notes，不必再申请授权。现在把最后一份会话摘要保存下来。
 
 六份会话的提炼结果已经齐全。现在写合并脚本，把各分片合并成 `summaries.json`，并生成项目与主题的目录。
 
@@ -187,7 +187,7 @@ GitHub API 能通，作者仓库就是视频里那 5 个 skill，现在把它完
 
 ## 一、一键入库：`sync.bat`
 
-[同步记忆库](C:\Users\you\Documents\deepseek-harness\default-workspace\sync.bat) — 双击即可，实测跑通：
+[同步记忆库](~workspace\sync.bat) — 双击即可，实测跑通：
 
 ```
 refresh_raw (扫 ~/.dsh/sessions 解压新会话)
@@ -198,6 +198,6 @@ refresh_raw (扫 ~/.dsh/sessions 解压新会话)
 工具：`pwsh`×12 · `browser_call`×8 · `write`×6 · `web_fetch`×2 · `skill`×1 · `browser_index`×1
 
 
-**原始存档**：`C:\Users\you\Documents\deepseek-harness\default-workspace\_tw\raw\session-bbded48a-ea44-45de-b273-f0e13f395ff1.jsonl`
+**原始存档**：`~workspace\notes\raw\session-bbded48a-ea44-45de-b273-f0e13f395ff1.jsonl`
 
 <!-- generated by memloom v0.1.0 — edits will be overwritten on the next build. -->

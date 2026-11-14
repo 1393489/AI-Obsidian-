@@ -52,7 +52,7 @@ class MyTool(Adapter):
 
 - 标题优先取 `ai-title`（Claude 自己起的），没有就退到第一条 prompt 的前 40 字。
 - `isSidechain: true` 的行是子 agent 的旁支对话，**跳过**，否则一次会话里会混进好几条不相关的时间线。
-- 目录名 `C--Users-Administrator` 是路径分隔符被压成 `-` 的结果，`group._cwd_name` 会取最后一段当名字。
+- 目录名 `C--Users-you` 是路径分隔符被压成 `-` 的结果，`group._cwd_name` 会取最后一段当名字。
 
 ### Codex
 

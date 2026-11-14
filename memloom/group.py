@@ -142,7 +142,7 @@ def _cwd_name(cwd: str) -> str:
         return p
     tail = parts[-1]
     if len(tail) > 3 and tail[1:3] == "--":
-        # Claude Code flattens a project path into ``C--Users-Administrator`` (every
+        # Claude Code flattens a project path into ``C--Users-you`` (every
         # separator becomes '-'). Restore it so the name and the home check stay sane.
         p = (tail[0] + ":/" + tail[3:].replace("-", "/")).rstrip("/")
         parts = [x for x in p.split("/") if x]

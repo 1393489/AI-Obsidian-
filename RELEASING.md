@@ -11,23 +11,30 @@
 
 ## 1. 发版前必须全绿
 
-```bash
-# 1) 测试全绿（不加 -q，失败时看得清）
-python -m unittest discover -s tests -t .
+一条命令跑完全部闸门（零依赖，退出码即结论）：
 
-# 2) 用真实档案跑一遍，确认三个子命令都能用
+```bash
+python tools/preflight.py
+```
+
+它替你检查七件事：跟踪文件全是 UTF-8 无 BOM / LF、仓库里没有本机路径与私有目录名泄漏、`pyproject.toml` 元数据齐全、`--version` 可跑、测试全绿、**第二次构建是纯 no-op**、`examples/` 样例在且不为空。中间任何一条红了都会打印原因并退出 1，别 tag。
+
+手工复核（preflight 不覆盖的部分）：
+
+```bash
+# 1) 用真实档案跑一遍，确认三个子命令都能用
 python -m memloom doctor
 python -m memloom scan
 
-# 3) 全量 + 增量各跑一次，第二次必须是「改动 0 / 复用 N / 新解析 0」
+# 2) 全量 + 增量各跑一次，第二次必须是「改动 0 / 复用 N / 新解析 0」
 python -m memloom build --out out/release-check --full
 python -m memloom build --out out/release-check
 
-# 4) 干跑不写盘
+# 3) 干跑不写盘
 python -m memloom build --dry-run --out out/release-check
 ```
 
-四条都过才继续。第 3 条是 v0.1 的核心承诺（增量解析），第二次构建只要还有 `本次改动 > 0` 就说明有页面在假变更，先查再发。
+第 2 条是 v0.1 的核心承诺（增量解析），第二次构建只要还有 `本次改动 > 0` 就说明有页面在假变更，先查再发。
 
 ## 2. 版本与文档对齐
 

@@ -19,7 +19,7 @@ class ToolUse:
     """One tool invocation, kept as light as possible."""
 
     name: str
-    summary: str = ""  # short, human readable: e.g. "pwsh: Get-ChildItem _tw"
+    summary: str = ""  # short, human readable: e.g. "pwsh: Get-ChildItem docs"
     ok: Optional[bool] = None
     error: str = ""  # first line of the failure, if any
 
