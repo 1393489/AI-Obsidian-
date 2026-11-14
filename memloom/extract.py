@@ -240,7 +240,13 @@ def fingerprint(line: str, width: int = 150) -> str:
     s = _INPATH.sub("<path>", s)
     s = _NUM.sub("<n>", s)
     s = re.sub(r"\s+", " ", s).strip(" -|{}[](),:;。，")
-    return s[:width]
+    # A fingerprint that *opens* with a placeholder has lost its subject
+    # ("<path>: No such file or directory"); strip the run so the title starts at a word.
+    s = re.sub(r"^(?:<(?:path|uuid|ts|id|n)>[\s:'`,;.：，]*)+", "", s)
+    # The tool wrapper's own caption ("Error: ...") is on every single failure, so keeping
+    # it spends the title budget on nothing. Drop it and let the real symptom lead.
+    s = re.sub(r"^(?:error|exception)\s*[:：]\s*", "", s, flags=re.I)
+    return s.strip(" -|{}[](),:;。，")[:width]
 
 
 def signature_key(fp: str) -> str:

@@ -20,7 +20,7 @@ tags:
 
 **项目**：[[default-workspace · memloom]]
 
-**相关主题**：[[踩坑-Error： grep search failed (exit N)： rg…]] · [[代码-app.asar／dsh]] · [[工具-find]] · [[工具-ask_user_question]] · [[工具-load_workspace_dependencies]] · [[工具-present]] · [[工具-browser_call]] · [[工具-copy]] · [[工具-web_fetch]]
+**相关主题**：[[踩坑-grep search failed (exit N)： rg： … IO error for…]] · [[工具-find]] · [[工具-ask_user_question]] · [[工具-load_workspace_dependencies]] · [[工具-present]] · [[工具-browser_call]] · [[工具-copy]] · [[工具-web_fetch]]
 
 ## 用户请求一览
 

@@ -60,7 +60,9 @@ def session_page_name(session) -> str:
 
 
 def topic_page_name(topic: Topic) -> str:
-    return f"{topic.category}-{safe_name(_pretty(topic.title), 40)}"
+    # 48 chars keeps two different failures that share a long prefix from colliding on the
+    # same file name (a collision costs a ``-1a2b`` suffix, which reads like noise).
+    return f"{topic.category}-{safe_name(_pretty(topic.title), 48)}"
 
 
 #: fingerprints keep volatile parts as ``<path>``/``<uuid>`` markers; on a page they read

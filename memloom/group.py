@@ -13,6 +13,7 @@ which hand-curated aliases can never do.
 from __future__ import annotations
 
 import os
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List
@@ -149,7 +150,8 @@ def _cwd_name(cwd: str) -> str:
         tail = parts[-1] if parts else tail
     home = os.path.expanduser("~").replace("\\", "/").rstrip("/").lower()
     if p.lower() == home:
-        return "~home"
+        # the session ran from home, so it says nothing about which project it was
+        return "家目录"
     return tail or p
 
 
@@ -212,6 +214,9 @@ _GENERIC_DIRS = {
     "core", "hooks", "references", "common", "shared", "utils", "util", "types",
     "router", "routes", "models", "services", "components", "pages", "layouts",
     "themes", "styles", "media", "node_modules", "asar-dump",
+    # scratch spaces and throwaway output: the session ran *somewhere*, that is all it says
+    "preview", "review", "renders", "render", "scratch", "sandbox", "experiments",
+    "sheet", "seen", "dialogue", "conversation", "对话记录", "临时", "草稿",
 }
 
 
@@ -453,7 +458,7 @@ def group_topics(
     topics = topics[:max_pitfalls]
 
     code = [
-        Topic(title=c, category="代码", sessions=_uniq(s), count=len(s))
+        Topic(title=_collapse_compound(c), category="代码", sessions=_uniq(s), count=len(s))
         for c, s in comp_sessions.items()
         if len(s) >= 3 and _is_code_topic(c)
     ]
@@ -479,17 +484,57 @@ def group_topics(
     return out
 
 
+_TOPIC_SEP = re.compile(r"[／/]")
+
+
+def _collapse_compound(name: str) -> str:
+    """``cc-switch／cc-switch`` -> ``cc-switch``: naming the same folder twice adds nothing."""
+    parts = [p.strip() for p in _TOPIC_SEP.split(name or "") if p.strip()]
+    if len(parts) == 2 and parts[0].lower() == parts[1].lower():
+        return parts[0]
+    return name
+
+#: a "folder" that is really the name of an interpreter says nothing about the work
+_SHELL_HEADS = {
+    "python", "python3", "py", "node", "npm", "pnpm", "yarn", "deno", "bun",
+    "bash", "sh", "zsh", "pwsh", "powershell", "cmd", "git", "uv", "pip",
+}
+
+#: packaged binaries and lockfiles leak through as bold "folders"
+_ARTIFACT_EXT = (".asar", ".egg", ".whl", ".jar", ".zip", ".tar", ".gz", ".dmg", ".exe")
+
+
 def _is_code_topic(name: str) -> bool:
     """A folder worth a 代码 page: specific enough that a reader learns something.
 
     ``images``, ``shared``, ``1`` — such pages are empty shells, so they are dropped
-    even when they appear in many sessions.
+    even when they appear in many sessions. Compounds are judged by their **head**:
+    ``bin/bash`` and ``app.asar/dsh`` only say *where* a command ran, while
+    ``douyin-duty/seen`` still points at something you could open.
     """
     n = (name or "").strip()
     if len(n) < 4 or n.isdigit():
         return False
     if n.lower() in _GENERIC_DIRS:
         return False
+    parts = [p for p in _TOPIC_SEP.split(n) if p]
+    if not parts:
+        return False
+    head = parts[0].strip()
+    if len(head) < 4 or head.isdigit():
+        return False
+    bare = re.sub(r"\d+$", "", head.lower())
+    if head.lower() in _GENERIC_DIRS or head.lower() in _SHELL_HEADS:
+        return False
+    if bare in _SHELL_HEADS or bare in _GENERIC_DIRS:
+        return False
+    if head.lower().endswith(_ARTIFACT_EXT):
+        return False
+    # a trailing generic part (``.../1``, ``.../config``) is filler, not a subject
+    for p in parts[1:]:
+        p = p.strip()
+        if p.isdigit() or (len(p) >= 4 and p.lower() in _GENERIC_DIRS):
+            return False
     return any(ch.isalpha() for ch in n)
 
 
