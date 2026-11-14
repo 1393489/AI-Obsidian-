@@ -138,6 +138,14 @@ python -m unittest discover -s tests -t .
 
 47 个测试，跑 0.5 秒。fixture 是从真实档案里裁剪出来的（DSH 的紧凑事件流、Claude 的 `.jsonl`、Codex 的 rollout），不是手编的假数据 —— 格式变了测试会先红。
 
+改完代码想确认没把「第二次构建是 no-op」这条核心承诺弄坏，跑一条命令就够：
+
+```bash
+python tools/preflight.py
+```
+
+它会检查编码与换行是否干净、仓库里有没有混进你本机的绝对路径、元数据是否齐全、测试是否全绿、以及**第二次 build 是否真的 0 改动**。零依赖，退出码即结论。
+
 ## 路线图
 
 - **v0.1**（本仓库）：三种适配器、规则抽取、项目/主题聚类、vault 渲染、增量解析（`.memloom/` 状态 + 解析缓存）、`doctor` / `scan` / `build`。
