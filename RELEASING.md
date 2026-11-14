@@ -51,7 +51,11 @@ python -m memloom build --dry-run --out out/release-check
 git add -A
 git -c user.name="memloom" -c user.email="memloom@example.com" \
     commit -m "memloom v0.1.0: <一句话>"
-git tag -a v0.1.0 -m "memloom v0.1.0"
+# 标签也要身份：没有全局 git 身份时 tag -a 会报 Committer identity unknown
+git -c user.name="memloom" -c user.email="memloom@example.com" \
+    tag -a v0.1.0 -m "memloom v0.1.0"
+# 验的是 commit；git tag -l --format=%(objectname) 给的是 tag 对象自己的 sha，会看错
+git rev-parse --short 'v0.1.0^{commit}'
 ```
 
 标签用 `vX.Y.Z`，与 `__version__` 一致（少一个 `v` 或写成 `0.1` 都会让 `pip install git+...@v0.1.0` 失败）。
@@ -75,6 +79,27 @@ git push origin v0.1.0
 git push origin main
 git push origin v0.1.0
 ```
+
+标签已经存在、这次又要指向新的 commit（常见于改了 changelog 之后）：
+
+```bash
+git -c user.name="memloom" -c user.email="memloom@example.com" \
+    tag -f -a v0.1.0 -m "memloom v0.1.0" HEAD
+git push origin main          # 先推分支
+git push -f origin v0.1.0     # 再强制推标签
+```
+
+别写成 `git push --atomic origin main v0.1.0`：atomic 不认强制更新，遇到已存在的标签会以 `v0.1.0 -> v0.1.0 (already exists)` 整体失败，连 `main` 都推不上去。
+
+推完用 API 回读一次再宣称发布（`git push` 的输出和网络抖动都可能骗人）：
+
+```bash
+curl -s -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/<owner>/<repo>/commits/main | grep -m1 '"sha"'
+curl -s https://api.github.com/repos/<owner>/<repo>/git/ref/tags/v0.1.0
+```
+
+GitHub 的 443 偶尔会 `Failed to connect` / `Recv failure: Connection was reset`，同一命令重试两三次通常就过；失败时不要接着改代码，先确认远端到底落没落。
 
 仓库设置建议（第一次建仓后做一次）：
 
