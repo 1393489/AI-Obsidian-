@@ -33,6 +33,44 @@ vault/
 
 不想先跑一遍？[`examples/sample-vault/`](examples/README.md) 里有五页真实生成的输出（索引、一页会话、一页主题、归档表、说明书），可以先看看这本库长什么样。
 
+## 长什么样
+
+<p align="center">
+  <img src="docs/hero.png" alt="散落在隐藏目录里的会话档案 → memloom → 一本 Obsidian 库" width="100%">
+</p>
+
+左边是你硬盘上真实存在的东西：一个 120 MB 的单行 JSONL、一堆 zstd 帧、藏在 `.` 开头的目录里。它们打不开、搜不到，下次想问「上次那个报错怎么解的」只能从头再问一遍。
+
+右边是同一条命令跑出来的库。打开其中一页会话，正文大概是这样（真实输出，来自 [`examples/sample-vault/`](examples/sample-vault/20-会话/2026-10-29-3f395ff1-obsidian-agent.md)）：
+
+```markdown
+---
+类型: 会话记录
+日期: 2026-10-29
+轮次: 6
+工具调用: 151
+工作目录: ~workspace
+---
+
+# Obsidian Agent记忆库搭建与知识图谱生成
+
+← 返回 [[00-总索引]]
+
+**项目**：[[default-workspace · memloom]]
+
+**相关主题**：[[踩坑-grep search failed (exit N)： rg： … IO error for…]] · [[工具-find]] · [[工具-present]]
+
+## 工具用量
+
+| 工具 | 次数 |
+|---|---|
+| `pwsh` | 57 |
+| `write` | 31 |
+| `subagent` | 21 |
+```
+
+那几个 `[[...]]` 在 Obsidian 里是真的能点的：点「工具-find」跳到**所有**用过 find 的会话，点「踩坑-…」跳到这个错误跨会话的全部现场。库不是把聊天记录存成 text，是把它编成了能走的网。
+
 ## 设计上的三条硬规矩
 
 | 规矩 | 意味着什么 |
@@ -50,7 +88,7 @@ vault/
 ## 快速开始
 
 ```bash
-git clone https://github.com/<you>/memloom.git
+git clone https://github.com/1393489/memloom.git
 cd memloom
 python -m memloom doctor      # 先看这台机器上有没有档案、压缩后端能不能用
 python -m memloom scan        # 只列出找到的档案，不解析
