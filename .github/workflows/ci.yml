@@ -30,9 +30,11 @@ jobs:
       - name: Unit tests (no third-party dependencies)
         run: python -m unittest discover -s tests -t . -v
 
-      # Its own step on purpose: a failure here is an environment problem, not a
-      # code problem, and mixing it with the build made the two indistinguishable.
+      # Its own step, and deliberately non-gating: `doctor` exits 1 by design when it
+      # finds no session archives, which is the normal state of a fresh runner. The
+      # report stays visible in the log; it must not decide whether the job is red.
       - name: Doctor (environment report)
+        continue-on-error: true
         run: python -m memloom doctor
 
       - name: CLI smoke test on the bundled fixtures
