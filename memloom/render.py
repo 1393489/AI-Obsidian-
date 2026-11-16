@@ -55,7 +55,9 @@ def _link(name: str) -> str:
 
 def session_page_name(session) -> str:
     date = to_local(session.started_at).strftime("%Y-%m-%d") if session.started_at else "0000-00-00"
-    title = slug(session.title or "untitled", 24)
+    # 32, not 24: at 24 a title carrying the 「· 01」 run number was cut mid-number
+    # (``…-douyin_comments-0``), so every numbered run collided again.
+    title = slug(session.title or "untitled", 32)
     return f"{date}-{short_id(session.id, 8)}-{title}"
 
 

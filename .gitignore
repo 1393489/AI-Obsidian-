@@ -13,3 +13,7 @@ out/
 .tmp/
 *.log
 test-index/
+
+# local build output used while testing
+_v/
+_vault*/

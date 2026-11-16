@@ -1,10 +1,12 @@
 """The whole pipeline against the fixtures: build, idempotency, and safe cleaning."""
+import datetime
 import os
 import shutil
 import unittest
 
 from memloom.render import GENERATED_MARK, GUIDE_NAME, INDEX_NAME
-from memloom.vault import build
+from memloom.model import Session
+from memloom.vault import build, number_duplicate_titles
 
 from ._helpers import FIX, mktemp
 
@@ -70,3 +72,30 @@ class BuildTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NumberDuplicateTitlesTest(unittest.TestCase):
+    """Scheduled runs share a title; same day, the only difference is run order."""
+
+    def _s(self, sid, title, day, hh):
+        s = Session(id=sid, source="/tmp/" + sid, adapter="dsh", title=title)
+        s.started_at = datetime.datetime(2026, 11, day, hh, 0)
+        return s
+
+    def test_run_order_decides_the_number(self):
+        late = self._s("b", "定时任务会话 · douyin_comments", 6, 18)
+        early = self._s("a", "定时任务会话 · douyin_comments", 6, 12)
+        number_duplicate_titles({"b": late, "a": early})
+        self.assertEqual(early.title, "定时任务会话 · douyin_comments · 01")
+        self.assertEqual(late.title, "定时任务会话 · douyin_comments · 02")
+
+    def test_unique_title_is_untouched(self):
+        s = self._s("a", "排查会话卡住不动问题", 6, 18)
+        number_duplicate_titles({"a": s})
+        self.assertEqual(s.title, "排查会话卡住不动问题")
+
+    def test_same_title_on_different_days_is_not_numbered(self):
+        a = self._s("a", "同题", 6, 18)
+        b = self._s("b", "同题", 7, 18)
+        number_duplicate_titles({"a": a, "b": b})
+        self.assertEqual((a.title, b.title), ("同题", "同题"))

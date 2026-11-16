@@ -113,6 +113,26 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
 
 # ------------------------------------------------------------------ writing
 
+
+def number_duplicate_titles(sessions: Dict[str, "Session"]) -> None:
+    """Give same-title sessions on the same day a 「· 02」 suffix, in run order.
+
+    A scheduled run and its next run carry the same title by design, so inside one
+    date the only thing that tells them apart is which came first. Numbering them
+    keeps every page name unique without inventing a title the archive never had.
+    Sessions with a unique title on that date are left untouched.
+    """
+    groups: Dict[Tuple[str, str], List["Session"]] = {}
+    for s in sessions.values():
+        groups.setdefault((s.title or "", s.date), []).append(s)
+    for items in groups.values():
+        if len(items) < 2:
+            continue
+        items.sort(key=lambda s: (s.started_at.timestamp() if s.started_at else 0.0, s.id))
+        for i, s in enumerate(items, 1):
+            s.title = f"{s.title} · {i:02d}"
+
+
 def _uniq_page_names(pages: Sequence[Tuple[str, str]]) -> List[Tuple[str, str]]:
     """Two pages must never share one path -- the second would silently overwrite the first.
 
@@ -221,6 +241,8 @@ def build(
         if since_days and s.started_at and not within_days(s.started_at, since_days):
             continue
         kept[sid] = s
+
+    number_duplicate_titles(kept)
 
     factsmap: Dict[str, SessionFacts] = {sid: analyze(s) for sid, s in kept.items()}
     projects = group_projects(kept, factsmap, split_threshold=split_threshold)
