@@ -9,7 +9,8 @@ from typing import Iterator, Optional
 
 from ..model import Session
 
-__all__ = ["Adapter", "read_jsonl", "texts_of", "clip", "first_line", "guess_kind", "squash"]
+__all__ = ["Adapter", "read_jsonl", "texts_of", "clip", "first_line", "guess_kind", "squash",
+           "looks_like_brief", "fallback_title"]
 
 # Tool names whose arguments we can summarise nicely.
 _SUMMARY_KEYS = (
@@ -144,6 +145,62 @@ def first_line(s: str, n: int = 300) -> str:
         if line.strip():
             return clip(line.strip(), n)
     return ""
+
+
+# Scheduled ("duty") runs open with the same standing instruction every single time, so
+# taking the first prompt as a title names two dozen sessions identically. These markers
+# only ever appear in that boilerplate — a normal question never opens with them.
+_BRIEF_MARKERS = (
+    "⏰",
+    "现在时间",
+    "这一轮的工作目录",
+    "你是这个账号",
+)
+
+
+def looks_like_brief(one: str) -> bool:
+    """True when an opening prompt is a standing instruction rather than a topic."""
+    return any(m in one for m in _BRIEF_MARKERS)
+
+
+_GENERIC_TOOL = frozenset(
+    {
+        "read", "write", "edit", "pwsh", "bash", "find", "grep", "glob",
+        "todo_write", "present", "skill", "read_image", "ask_user_question",
+        "job_output", "job_kill", "load_workspace_dependencies",
+    }
+)
+
+
+def fallback_title(turns, limit: int = 40) -> str:
+    """Title for a session whose archive carries no usable title.
+
+    Prefer the first prompt that reads like a real request. If every prompt is
+    scheduler boilerplate, name it for what the run actually used (「定时任务会话 ·
+    douyin_share_card」) — 28 pages sharing one truncated instruction are
+    indistinguishable in the file list, and the H1 reads like a broken sentence.
+    """
+    head = ""
+    for t in turns:
+        if not t.prompt:
+            continue
+        one = re.sub(r"\s+", " ", t.prompt).strip()
+        if not head:
+            head = one
+        if not looks_like_brief(one):
+            return clip(one, limit)
+    if not head:
+        return "(无标题)"
+    hint = ""
+    for t in turns:
+        for tu in t.tools:
+            name = (tu.name or "").strip()
+            if name and name not in _GENERIC_TOOL:
+                hint = name.rsplit("__", 1)[-1]
+                break
+        if hint:
+            break
+    return f"定时任务会话 · {hint}" if hint else "定时任务会话"
 
 
 def guess_kind(path: str) -> str:

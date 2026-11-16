@@ -24,7 +24,7 @@ from typing import Optional
 from .. import zstd_frames
 from ..model import Session, ToolUse, Turn
 from ..util import from_ms, parse_iso
-from .base import Adapter, clip, squash, texts_of
+from .base import Adapter, clip, fallback_title, looks_like_brief, squash, texts_of
 
 __all__ = ["DshAdapter"]
 
@@ -118,7 +118,9 @@ def _build(path: str, events) -> Optional[Session]:
             times.append(tm)
 
         if t == "session/title":
-            if d.get("title"):
+            # A scheduler run stamps the same standing instruction as its title every
+            # time; keep it only if it actually names the work.
+            if d.get("title") and not looks_like_brief(str(d["title"])):
                 title = d["title"]
         elif t == "model/selection":
             if d.get("model"):
@@ -194,8 +196,4 @@ def _text_of_result(msg: dict) -> str:
 
 
 def _fallback_title(turns) -> str:
-    for t in turns:
-        if t.prompt:
-            one = re.sub(r"\s+", " ", t.prompt).strip()
-            return clip(one, 40)
-    return "(无标题)"
+    return fallback_title(turns)

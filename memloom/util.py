@@ -23,6 +23,8 @@ __all__ = [
     "ensure_dir",
     "within_days",
     "uniq_keep_order",
+    "is_informative_error",
+    "short_tool_name",
 ]
 
 
@@ -69,8 +71,9 @@ def safe_name(s: str, limit: int = 60) -> str:
 
 
 def slug(s: str, limit: int = 24) -> str:
-    """ASCII-ish slug for stable file names."""
-    s = re.sub(r"[^A-Za-z0-9]+", "-", (s or "").lower()).strip("-")
+    """Stable file-name fragment. Keeps CJK: a Chinese title that slugs to "x"
+    makes every session page indistinguishable in the file list."""
+    s = re.sub(r"[^\w]+", "-", (s or "").lower(), flags=re.UNICODE).strip("-")
     return (s or "x")[:limit].strip("-") or "x"
 
 
@@ -174,3 +177,37 @@ def uniq_keep_order(items: Iterable[str]) -> list:
         seen.add(k)
         out.append(k)
     return out
+
+
+# ---- topic titles -------------------------------------------------------
+
+# ``fingerprint()`` already strips a leading "Error: ", so what survives can be the bare
+# word "Error" — and with 26 sessions behind it that becomes the biggest page in 踩坑
+# while its only evidence is "Error: {". A repeatable signal needs a subject.
+_GENERIC_ERRORS = frozenset(
+    {
+        "error", "errors", "err", "failed", "fail", "failure", "exception",
+        "traceback", "timeout", "timed out", "undefined", "unknown",
+        "unknown error", "exit 1", "exit code 1", "command failed",
+        "error failed", "operation failed",
+    }
+)
+
+
+def is_informative_error(fp: str) -> bool:
+    """True when an error fingerprint names *what* failed, not just *that* it failed."""
+    s = (fp or "").strip().strip(".:;!?，。：；！？").lower()
+    if len(s) < 6:
+        return False
+    return s not in _GENERIC_ERRORS
+
+
+def short_tool_name(raw: str) -> str:
+    """``tool:mcp__douyin__douyin_status`` -> ``douyin_status``.
+
+    The MCP server prefix is plumbing; the reader only needs the verb.
+    """
+    s = (raw or "").replace("tool:", "")
+    if "__" in s:
+        s = s.rsplit("__", 1)[-1]
+    return s

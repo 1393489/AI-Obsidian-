@@ -3,7 +3,13 @@ import unittest
 
 from memloom.group import analyze, group_projects, group_topics
 from memloom.model import Session, ToolUse, Turn
-from memloom.util import clip_text, safe_name, slug
+from memloom.util import (
+    clip_text,
+    is_informative_error,
+    safe_name,
+    short_tool_name,
+    slug,
+)
 
 
 def mk(sid, cwd, prompt, tools=(), reply="好的，已经改完。"):
@@ -31,9 +37,15 @@ class SafeNameTest(unittest.TestCase):
         self.assertEqual(safe_name(""), "untitled")
         self.assertEqual(safe_name("///"), "untitled")
 
-    def test_slug_is_ascii(self):
-        self.assertEqual(slug("Hello World 你好"), "hello-world")
+    def test_slug_keeps_cjk(self):
+        # A slug of "x" makes every session page indistinguishable in Obsidian's
+        # file list, so Chinese must survive the trip.
+        self.assertEqual(slug("Hello World 你好"), "hello-world-你好")
+        self.assertEqual(slug("排查会话卡住不动"), "排查会话卡住不动")
         self.assertTrue(slug(""))
+
+    def test_slug_replaces_punctuation(self):
+        self.assertEqual(slug("Error: cannot read /a/b"), "error-cannot-read-a-b")
 
 
 class ClipTest(unittest.TestCase):
@@ -117,3 +129,25 @@ class TopicTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TopicTitleTest(unittest.TestCase):
+    """A 踩坑 page needs a subject, and a tool page needs a readable verb."""
+
+    def test_bare_error_words_are_not_topics(self):
+        for fp in ("Error", "error:", "Failed", "Traceback", "exit code 1", ""):
+            self.assertFalse(is_informative_error(fp), fp)
+
+    def test_error_with_a_subject_is_a_topic(self):
+        for fp in (
+            "spawnSync node ETIMEDOUT",
+            "cannot read remote entry.js： not found",
+            "old_string was not found in the file",
+        ):
+            self.assertTrue(is_informative_error(fp), fp)
+
+    def test_mcp_prefix_is_stripped(self):
+        self.assertEqual(short_tool_name("tool:mcp__douyin__douyin_status"), "douyin_status")
+        self.assertEqual(short_tool_name("tool:mcp__snowluma__qq_reply"), "qq_reply")
+        self.assertEqual(short_tool_name("tool:pwsh"), "pwsh")
+        self.assertEqual(short_tool_name("tool:read_image"), "read_image")

@@ -23,7 +23,7 @@ from typing import Optional
 
 from ..model import Session, ToolUse, Turn
 from ..util import parse_iso
-from .base import Adapter, clip, read_jsonl, squash, texts_of
+from .base import Adapter, clip, fallback_title, read_jsonl, squash, texts_of
 
 __all__ = ["ClaudeCodeAdapter"]
 
@@ -175,7 +175,4 @@ def _split_user_blocks(blocks):
 
 
 def _fallback_title(turns) -> str:
-    for t in turns:
-        if t.prompt:
-            return clip(re.sub(r"\s+", " ", t.prompt).strip(), 40)
-    return "(无标题)"
+    return fallback_title(turns)

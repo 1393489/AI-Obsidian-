@@ -5,6 +5,8 @@ import shutil
 import unittest
 
 from memloom.adapters import detect_adapter, get_adapter
+from memloom.adapters.base import fallback_title, looks_like_brief
+from memloom.model import ToolUse, Turn
 
 from ._helpers import FIX, fixture, mktemp
 
@@ -103,3 +105,34 @@ class CodexLoadTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FallbackTitleTest(unittest.TestCase):
+    """Scheduler runs share one opening sentence; the title must not."""
+
+    def _turns(self, *prompts):
+        out = []
+        for i, p in enumerate(prompts, 1):
+            t = Turn(index=i)
+            t.prompt = p
+            out.append(t)
+        return out
+
+    def test_real_request_wins(self):
+        turns = self._turns("你是这个账号的抖音助手。⏰", "帮我把第 10 期的封面重做一版")
+        self.assertEqual(fallback_title(turns), "帮我把第 10 期的封面重做一版")
+
+    def test_all_brief_says_so_instead_of_repeating(self):
+        turns = self._turns("你是这个账号的抖音助手。⏰ 现在时间……", "⏰ 现在时间（真实北京时间）……")
+        self.assertEqual(fallback_title(turns), "定时任务会话")
+
+    def test_no_prompt_at_all(self):
+        self.assertEqual(fallback_title([]), "(无标题)")
+
+    def test_normal_question_is_brief_free(self):
+        self.assertEqual(looks_like_brief("为什么照片只有一处是清楚的？"), False)
+
+    def test_brief_run_with_tools_names_what_it_used(self):
+        turns = self._turns("你是这个账号的抖音助手。⏰")
+        turns[0].tools = [ToolUse(name="read"), ToolUse(name="mcp__douyin__douyin_share_card")]
+        self.assertEqual(fallback_title(turns), "定时任务会话 · douyin_share_card")

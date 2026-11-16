@@ -27,6 +27,7 @@ from .extract import (
     path_component,
     session_texts,
 )
+from .util import is_informative_error, short_tool_name
 
 __all__ = ["SessionFacts", "Project", "Topic", "analyze", "group_projects", "group_topics"]
 
@@ -445,6 +446,8 @@ def group_topics(
     for fp, sids in err_sessions.items():
         if len(sids) < 2:
             continue  # a one-off failure is noise, not a topic
+        if not is_informative_error(fp):
+            continue  # "Error" / "Failed" on their own name no subject; see util
         topics.append(
             Topic(
                 title=fp,
@@ -466,7 +469,7 @@ def group_topics(
     topics.extend(code[:max_code])
 
     tools = [
-        Topic(title=h.replace("tool:", ""), category="工具", sessions=_uniq(s), count=len(s))
+        Topic(title=short_tool_name(h), category="工具", sessions=_uniq(s), count=len(s))
         for h, s in cmd_sessions.items()
         if len(s) >= 3
     ]
