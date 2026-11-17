@@ -1,7 +1,7 @@
 # 发布文案（直接复制粘贴用）
 
 > 这份文件是给**发布者**用的，不是给读者的。每段都按对应平台的调性写过：HN 要克制、Reddit 要具体、V2EX 要口语、掘金要技术。
-> 链接统一用 `https://github.com/1393489/memloom`，别用短链、别带 UTM。
+> 链接统一用 `https://github.com/KrLito7/memloom`，别用短链、别带 UTM。
 
 ## 0. 顺序与节奏（比文案更重要）
 
@@ -72,7 +72,7 @@
 - 只读档案目录，只往 --out 写
 - 增量：第二次跑只重解析变过的档案（我这边 117 个档案 289 MB：14.1s → 3.3s → 0.6s）
 
-https://github.com/1393489/memloom
+https://github.com/KrLito7/memloom
 
 自测 47 个用例，CI 跑 3.9/3.12/3.13 × Win/Linux。Codex 的适配器目前还是 beta，
 只在我造的样本上验过（这台机器没装 Codex）。
@@ -120,7 +120,7 @@ Incremental by default: on my 117 archives / 289 MB it's 14.1s cold, 3.3s on a
 rerun, 0.6s after that, and a rerun writes 0 files (so rebuilding doesn't
 reset whatever you're reading).
 
-Repo: https://github.com/1393489/memloom  (MIT)
+Repo: https://github.com/KrLito7/memloom  (MIT)
 
 What I'd genuinely like to know: which AI client do you use? Adapters for
 Cursor / Aider / Copilot would each be ~150 lines and I'd rather write the one
@@ -166,7 +166,7 @@ Design choices that people usually push back on:
 Adapters today: Claude Code, Codex (beta — synthetic fixtures only, no Codex
 on this machine to test against), and DSH. Adding one is ~150 lines.
 
-https://github.com/1393489/memloom
+https://github.com/KrLito7/memloom
 
 Curious whether the "no LLM" call is right. For a personal archive I think
 deterministic beats clever, but I can see the argument that ugly topic names
@@ -193,7 +193,7 @@ defeat the purpose of the vault in the first place.
 AI 帮你解决的问题，都躺在 .jsonl 里，下次遇到同一个报错还是得重新问一遍。
 我写了个小工具把它们读成一本 Obsidian 库：一次会话一页、跨会话的踩坑归成一页，
 全是双链、能点。本地跑、不上传、不用 LLM、零依赖。
-https://github.com/1393489/memloom
+https://github.com/KrLito7/memloom
 ```
 
 ---

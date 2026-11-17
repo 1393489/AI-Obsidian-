@@ -24,7 +24,7 @@ vault/
 ## 安装
 
 ```bash
-git clone https://github.com/1393489/memloom.git
+git clone https://github.com/KrLito7/memloom.git
 cd memloom
 python -m memloom doctor      # 体检：档案目录在不在、zstd 后端走的哪条路
 python -m memloom build --out vault
@@ -64,10 +64,10 @@ python -m memloom build --out vault
 
 ## 或许你也想要
 
-- 学习一本库的结构：看 [`examples/sample-vault/`](https://github.com/1393489/memloom/tree/main/examples/sample-vault)（五页真实输出）
+- 学习一本库的结构：看 [`examples/sample-vault/`](https://github.com/KrLito7/memloom/tree/main/examples/sample-vault)（五页真实输出）
 - 只有五分钟：`memloom build --dry-run` 只算不写；`memloom scan` 只报档案数
-- 换机器/换客户端：适配器约 150 行一个，见 [`docs/adapters.md`](https://github.com/1393489/memloom/blob/main/docs/adapters.md)
+- 换机器/换客户端：适配器约 150 行一个，见 [`docs/adapters.md`](https://github.com/KrLito7/memloom/blob/main/docs/adapters.md)
 
-完整文档在 [README](https://github.com/1393489/memloom#readme)。MIT 许可。
+完整文档在 [README](https://github.com/KrLito7/memloom#readme)。MIT 许可。
 
 有任何用不上的地方直接开 issue 说「这页我从来不会点」——删除输出和增加输出一样有用。

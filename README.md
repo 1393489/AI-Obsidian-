@@ -88,7 +88,7 @@ vault/
 ## 快速开始
 
 ```bash
-git clone https://github.com/1393489/memloom.git
+git clone https://github.com/KrLito7/memloom.git
 cd memloom
 python -m memloom doctor      # 先看这台机器上有没有档案、压缩后端能不能用
 python -m memloom scan        # 只列出找到的档案，不解析

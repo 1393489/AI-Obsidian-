@@ -34,8 +34,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/1393489/memloom"
-Issues = "https://github.com/1393489/memloom/issues"
+Homepage = "https://github.com/KrLito7/memloom"
+Issues = "https://github.com/KrLito7/memloom/issues"
 
 [project.optional-dependencies]
 # Only needed to read DeepSeek Harness `.jsonl.zstd` archives.
