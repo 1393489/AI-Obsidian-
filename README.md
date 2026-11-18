@@ -87,15 +87,48 @@ vault/
 
 ## 快速开始
 
+> [!WARNING]
+> **PyPI 上那个叫 `memloom` 的包不是本项目。**（那边是另一个无关项目，v0.9.0）
+> 装它请认准这条命令，或者直接用下面的 `git clone`：
+>
+> ```bash
+> pip install "memloom @ git+https://github.com/KrLito7/memloom"
+> ```
+>
+> 直接 `pip install memloom` 会装到别人的包，命令行为完全不同 —— 这不是你能修的问题，是名字撞了。
+
+**需要 Python 3.9+**，不需要别的依赖。
+
 ```bash
+# 1) 拿到代码
 git clone https://github.com/KrLito7/memloom.git
 cd memloom
-python -m memloom doctor      # 先看这台机器上有没有档案、压缩后端能不能用
-python -m memloom scan        # 只列出找到的档案，不解析
+
+# 2) 先体检：这台机器上到底有没有可读的档案
+python -m memloom doctor
+
+# 3) 看看会读哪些文件（只列，不解析、不写盘）
+python -m memloom scan
+
+# 4) 生成
 python -m memloom build --out vault
 ```
 
 然后用 Obsidian 的「打开文件夹作为仓库」指到 `vault/`。
+
+<details>
+<summary><b>Windows 上 <code>python</code> 敲了没反应？</b></summary>
+
+多半是 Microsoft Store 的占位别名。用 `py -3` 或 `python3`，或者装完 Python 后关掉「设置 → 应用 → 应用执行别名」里的 `python.exe` / `python3.exe`。
+
+本项目的输出是 UTF-8。老版终端（cmd / PowerShell 5.1）可能把中文显示成乱码，先 `chcp 65001` 或直接用 Windows Terminal。
+</details>
+
+<details>
+<summary><b>不想先装，只想看看生成出来长什么样？</b></summary>
+
+[`examples/sample-vault/`](examples/README.md) 里有五页真实输出，直接拿 Obsidian 打开那个目录就能看到双链跳转的效果。
+</details>
 
 装成命令（可选）：
 
@@ -115,6 +148,8 @@ pip install -e ".[zstd]"      # 顺手装 pyzstd，解压更快（不是必需�
 | `memloom build --since 30 --min-turns 3` | 只收最近 30 天、且轮次 ≥ 3 的会话 |
 | `memloom build --dry-run` | 只算不写，看看会生成多少页 |
 | `memloom build --full` | 忽略增量缓存，全部重新解析 |
+| `memloom build --verbose` | 连命中缓存的文件也回显（默认只回显本次真正解析的那几个） |
+| `memloom build --quiet` | 一个文件都不回显，只留汇总 |
 
 `--adapter auto|dsh|claude-code|codex` 强制指定某个适配器（默认按文件特征自动判断）。
 
@@ -123,25 +158,21 @@ pip install -e ".[zstd]"      # 顺手装 pyzstd，解压更快（不是必需�
 每次 `build` 都在输出目录里留一份 `<out>/.memloom/`：一个 `state.json`（每条档案的 size + mtime_ns + 适配器名）和一份解析结果的缓存。下次跑只有**真的变过的档案**才会被重新解析，其余直接读缓存。缓存只写在你指定的输出目录里，**绝不写进你的档案目录**（那些目录本来就是只读的）。
 
 ```
-$ memloom build --out vault        # 第一次：117 个档案 / 289 MB，全部解析
-会话   117
-主题   60
-页面   189（本次改动 189）
-项目   9
-缓存   复用 0 / 新解析 117
-耗时   14.1s
+$ memloom build --out vault        # 第一次：133 个档案 / 322 MB，全部解析
+会话     131
+主题    62
+页面   205（本次改动 205）
+项目     9
+缓存   复用 0 / 新解析 131
+耗时   10.9s
 
 $ memloom build --out vault        # 再跑一次，档案没动
-页面   189（本次改动 0）
-缓存   复用 117 / 新解析 0
-耗时   3.26s
-
-$ memloom build --out vault        # 第三次
-页面   189（本次改动 0）
-耗时   0.64s
+页面   205（本次改动 0）
+缓存   复用 131 / 新解析 0
+耗时   2.65s
 ```
 
-（数字取自作者机器 2026-11-14 的一次实测。第二次剩下的开销只有读缓存和比对，第三次连解码都省了；如果某个档案还在增长——比如你正开着别的编辑器边写边跑——那**一份**会重新解析，其余照旧命中。你自己的档案数量和耗时当然不会一样。）
+（数字取自作者机器 2026-11-18 的一次实测。这些数字每天都在长 —— 你自己跑出来的数量和耗时当然不会一样，看**比例**就行：第二次只剩读缓存和比对的成本。如果某个档案还在增长——比如你正开着别的编辑器边写边跑——那**一份**会重新解析，其余照旧命中。）
 
 写盘也是增量的：内容没变就不碰文件、只删带生成标记的旧页 —— 所以重复跑是零写入，Obsidian 不会因为一次重建把你看的页面刷掉。缓存坏了、换了版本、想强制重来：`--full` 或直接删掉 `<out>/.memloom/`。
 
@@ -177,13 +208,36 @@ memloom 的做法：
 - **Codex 适配器未验证**（见上表）。
 - **不做语义搜索**。链接和分类是结构化的；找关键词请用 Obsidian 自带搜索。
 
+## 常见问题
+
+**跑完只有几个页面 / 一个页面都没有？**
+先跑 `memloom doctor`，看采集路径那三行有几个 `✓`。全是不存在，说明你还没用那些工具，或者档案在别的地方 —— 用 `memloom build --root 名字=路径` 手动指过去。
+
+**`页面 0`，但 doctor 说找到档案了？**
+大概率是会话太短被过滤了。默认 `--min-turns` 会丢掉空对话，加 `--min-turns 0` 再看。
+
+**zstd 解不开？**
+DSH 的 `.zstd` 是多 frame 拼接的，标准库解不了。memloom 会依次试 `pyzstd` → Python 3.14 内置 → 本机 `node` → `zstd` 命令行。四条都不通时报错会告诉你缺哪条。最省事的修法是 `pip install pyzstd`。
+
+**页面名不好听（`踩坑-Error- ECONNREFUSED`）？**
+是的，规则拼出来的。v0.2 会加可选的 LLM 命名，但那永远是开关不是前置条件 —— 不想用模型的人不该被挡住。
+
+**我删了会话档案，库里还有？**
+`build` 只增不删老页面（带生成标记的会重写）。删了源档案后重新 `build --full` 会重新结账；想彻底清空就换个 `--out` 目录重来。
+
+**它会读我的档案目录吗？会改吗？**
+只读。不写、不移动、不复制原始档案（`90-原文归档/` 只记位置）。唯一写入的地方是你 `--out` 指的目录。全程无网络请求，可以断网跑。
+
+**能支持 XXX 吗？**
+一个来源 = 一个类，实现 `match` / `sniff` / `load` 三个方法，见 [docs/adapters.md](docs/adapters.md)。想加哪个开个 issue，附一段（脱敏后的）样本文件结构就行。
+
 ## 测试
 
 ```bash
 python -m unittest discover -s tests -t .
 ```
 
-47 个测试，跑 0.5 秒。fixture 是从真实档案里裁剪出来的（DSH 的紧凑事件流、Claude 的 `.jsonl`、Codex 的 rollout），不是手编的假数据 —— 格式变了测试会先红。
+59 个测试，跑 0.4 秒。fixture 是从真实档案里裁剪出来的（DSH 的紧凑事件流、Claude 的 `.jsonl`、Codex 的 rollout），不是手编的假数据 —— 格式变了测试会先红。
 
 改完代码想确认没把「第二次构建是 no-op」这条核心承诺弄坏，跑一条命令就够：
 

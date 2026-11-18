@@ -74,11 +74,16 @@ def scan(roots: Optional[Sequence[Tuple[str, str]]] = None,
 
 
 def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
-             cache: Optional[Cache] = None) -> Tuple[Dict[str, Session], List[str]]:
+             cache: Optional[Cache] = None,
+             verbose: bool = False) -> Tuple[Dict[str, Session], List[str]]:
     """Parse every archive; returns ``(sessions_by_id, problems)``.
 
     With a ``cache``, files whose size/mtime are unchanged are restored from disk instead
     of being parsed again -- zstd decompression is the expensive part of a build.
+
+    Only files that were actually parsed are echoed. A rebuild where nothing changed
+    therefore prints no per-file lines at all, which is how you can tell the cache
+    worked without reading the counters. ``verbose`` echoes cache hits too.
     """
     sessions: Dict[str, Session] = {}
     problems: List[str] = []
@@ -88,6 +93,7 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
             problems.append(f"{path}: 未知适配器 {name}")
             continue
         s: Optional[Session] = cache.lookup(path, name) if cache is not None else None
+        from_cache = s is not None
         if s is None:
             try:
                 s = adapter.load(path)
@@ -106,8 +112,9 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
                 sessions[s.id] = s
             continue
         sessions[s.id] = s
-        if not quiet:
-            print(f"  + {os.path.basename(path)}  {len(s.turns)} 轮 / {s.n_tools} 工具", flush=True)
+        if not quiet and (verbose or not from_cache):
+            mark = "·" if from_cache else "+"
+            print(f"  {mark} {os.path.basename(path)}  {len(s.turns)} 轮 / {s.n_tools} 工具", flush=True)
     return sessions, problems
 
 
@@ -220,6 +227,7 @@ def build(
     split_threshold: int = 12,
     dry_run: bool = False,
     quiet: bool = False,
+    verbose: bool = False,
     full: bool = False,
 ) -> dict:
     started = time.time()
@@ -231,7 +239,7 @@ def build(
         cache.read_only = True
     if not quiet:
         print(f"发现 {len(pairs)} 个会话存档，开始解析…", flush=True)
-    sessions, problems = load_all(pairs, quiet=quiet, cache=cache)
+    sessions, problems = load_all(pairs, quiet=quiet, cache=cache, verbose=verbose)
 
     # filters
     kept: Dict[str, Session] = {}

@@ -1,0 +1,81 @@
+name: 报告问题
+description: 装不上、跑不通、结果是空的、某个来源读不了 —— 都走这里
+title: "[问题] "
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢你来。**先花 30 秒确认一件事**：你装的确实是这个仓库的 memloom，不是 PyPI 上那个同名的包。
+
+        ```bash
+        pip show memloom    # 如果是从 git 装的，会显示本仓库地址
+        ```
+
+        下面几栏填得越全，越省你我的时间（尤其是 `doctor` 的输出——它一项就能定位大半问题）。
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 是哪一类问题
+      options:
+        - 装不上 / 命令找不到
+        - 跑起来了，但页面是 0 或很少
+        - 某个来源的档案读不了（zstd / jsonl 报错）
+        - 生成的内容不对（分类、双链、项目聚合）
+        - 第二次跑没有变快
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: memloom doctor 的输出
+      description: 直接粘贴，别删行。这一栏信息量最大。
+      render: shell
+      placeholder: |
+        $ python -m memloom doctor
+        memloom 0.1.0
+        python  3.12.14 (...)
+        采集路径：
+          ✓ dsh  106 个 ...
+        zstd 后端：node
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: 你敲的命令
+      description: 完整命令 + 完整输出（报错要连 traceback 一起）
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expect
+    attributes:
+      label: 你以为会发生什么，实际发生了什么
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: 系统 + Python 版本
+      description: 比如 Windows 11 / Python 3.12.14，或 macOS 14 / Python 3.11
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 自查
+      options:
+        - label: 我确认装的是 KrLito7/memloom，不是 PyPI 上的同名包
+          required: true
+        - label: 我搜过已有 issue，没有重复
+          required: true
+        - label: 我的会话档案里不包含不能外传的敏感信息（贴样本前请自己脱敏）
+          required: false

@@ -77,6 +77,7 @@ def cmd_build(args) -> int:
         split_threshold=args.split,
         dry_run=args.dry_run,
         quiet=args.quiet,
+        verbose=args.verbose,
         full=args.full,
     )
 
@@ -247,7 +248,9 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--dry-run", action="store_true", help="只统计，不写文件")
     b.add_argument("--full", action="store_true", help="忽略增量缓存，全部重新解析")
     b.add_argument("--json", action="store_true", help="输出机器可读结果")
-    b.add_argument("--quiet", "-q", action="store_true", help="不打印每个文件")
+    b.add_argument("--quiet", "-q", action="store_true", help="一个文件都不打印，只留汇总")
+    b.add_argument("--verbose", "-v", action="store_true",
+                   help="连命中缓存的文件也打印（默认只打印本次真正解析的）")
     b.set_defaults(func=cmd_build)
 
     s = sub.add_parser("scan", help="看看会读哪些文件")

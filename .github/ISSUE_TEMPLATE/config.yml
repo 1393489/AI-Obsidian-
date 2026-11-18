@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 装之前先看这里（PyPI 同名警告 + 快速开始）
+    url: https://github.com/KrLito7/memloom#快速开始
+    about: 装它必须走本仓库。PyPI 上那个 memloom 是别人的包，装了会一脸懵。
+  - name: 常见问题（0 页 / zstd 解不开 / 名字难听 / 第二次没变快）
+    url: https://github.com/KrLito7/memloom#常见问题
+    about: 大部分「跑不通」在这里都有答案，先扫一眼。
+  - name: 想加一个新来源（Cursor / Gemini CLI / Copilot…）
+    url: https://github.com/KrLito7/memloom/blob/main/docs/adapters.md
+    about: 一个来源 = 一个类，三个方法。看这份文档就知道要写什么。
