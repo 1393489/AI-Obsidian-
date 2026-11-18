@@ -53,6 +53,18 @@ def _link(name: str) -> str:
     return f"[[{name}]]"
 
 
+def _neutralize_links(text: str) -> str:
+    """Stop quoted conversation text from becoming a wikilink.
+
+    People talk *about* wikilinks (and this very README mentions ``[[双链]]``), so a
+    session body can contain ``[[名字]]`` that was never meant as a link. Obsidian
+    happily renders it as one and reports it as a broken link to a page that will
+    never exist. Escaping only the opening bracket keeps the text readable while
+    making it inert.
+    """
+    return (text or "").replace("[[", "\\[[")
+
+
 def session_page_name(session) -> str:
     date = to_local(session.started_at).strftime("%Y-%m-%d") if session.started_at else "0000-00-00"
     # 32, not 24: at 24 a title carrying the 「· 01」 run number was cut mid-number
@@ -158,7 +170,7 @@ def render_session(session, facts: Optional[SessionFacts], project: Optional[Pro
         out.append("## 用户请求一览")
         out.append("")
         for i, p in enumerate(prompts, 1):
-            one = " ".join(p.split())[:120]
+            one = _neutralize_links(" ".join(p.split())[:120])
             out.append(f"{i}. {one}")
         out.append("")
 
@@ -206,12 +218,12 @@ def render_session(session, facts: Optional[SessionFacts], project: Optional[Pro
         if (t.prompt or "").strip():
             out.append("**用户**：")
             out.append("")
-            out.append(clip_text(t.prompt.strip(), prompt_cap))
+            out.append(_neutralize_links(clip_text(t.prompt.strip(), prompt_cap)))
             out.append("")
         if (t.reply or "").strip():
             out.append("**助手**：")
             out.append("")
-            out.append(clip_text(t.reply.strip(), reply_cap))
+            out.append(_neutralize_links(clip_text(t.reply.strip(), reply_cap)))
             out.append("")
         if t.tools:
             names = Counter(x.name for x in t.tools)

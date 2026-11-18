@@ -8,6 +8,7 @@ import re
 from typing import Iterator, Optional
 
 from ..model import Session
+from ..util import tighten
 
 __all__ = ["Adapter", "read_jsonl", "texts_of", "clip", "first_line", "guess_kind", "squash",
            "looks_like_brief", "fallback_title"]
@@ -136,6 +137,10 @@ def texts_of(content) -> str:
 
 
 def clip(s: str, n: int) -> str:
+    # Do NOT route this through `tighten`. clip() also feeds tool summaries, which
+    # are then mined for paths/commands -- moving the cut point changes what gets
+    # extracted, and a shorter summary silently drops evidence. Titles get the
+    # boundary-aware version in fallback_title() instead.
     s = re.sub(r"\n{3,}", "\n\n", (s or "").strip())
     return s if len(s) <= n else s[:n].rstrip() + " …"
 
@@ -188,7 +193,7 @@ def fallback_title(turns, limit: int = 40) -> str:
         if not head:
             head = one
         if not looks_like_brief(one):
-            return clip(one, limit)
+            return tighten(one, limit, " …")
     if not head:
         return "(无标题)"
     hint = ""

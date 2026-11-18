@@ -20,6 +20,8 @@ __all__ = [
     "from_ms",
     "human_size",
     "clip_text",
+    "tighten",
+    "settle",
     "ensure_dir",
     "within_days",
     "uniq_keep_order",
@@ -29,6 +31,69 @@ __all__ = [
 
 
 _TZ = datetime.timezone(datetime.timedelta(hours=8))
+
+_PAIRS = {"（": "）", "(": ")", "【": "】", "「": "」", "『": "』", "《": "》", "[": "]", "〔": "〕"}
+_CLOSERS = frozenset(_PAIRS.values())
+_BREAKS = frozenset(" \t·、，。；：,.;:!?！？—-–—")
+
+
+def _first_unclosed(s: str) -> Optional[int]:
+    """Index of the first opener that never gets closed, or None if balanced."""
+    stack = []
+    for i, ch in enumerate(s):
+        if ch in _PAIRS:
+            stack.append((i, ch))
+        elif ch in _CLOSERS and stack and _PAIRS[stack[-1][1]] == ch:
+            stack.pop()
+    return stack[0][0] if stack else None
+
+
+def tighten(s: str, limit: int, ellipsis: str = "…") -> str:
+    """Shorten to ``limit`` at a natural boundary instead of mid-token.
+
+    Cutting at exactly N characters is what produced session titles like
+    ``【当前时间】2026/10/31 15:06:31（`` -- a dangling paren with nothing in
+    it, which reads as a bug rather than a truncation. So: prefer a space or
+    punctuation break, then drop any opener the cut left hanging, then trim
+    trailing punctuation before the ellipsis goes on.
+    """
+    s = (s or "").strip()
+    if limit <= 0 or len(s) <= limit:
+        return s
+    cut = s[:limit]
+    floor = max(1, int(limit * 0.55))
+    for i in range(len(cut) - 1, floor - 1, -1):
+        if cut[i] in _BREAKS:
+            cut = cut[:i]
+            break
+    unclosed = _first_unclosed(cut)
+    if unclosed is not None:
+        cut = cut[:unclosed]
+    cut = cut.rstrip(" \t·、，。；：,.;:!?！？—-–—")
+    if not cut:
+        cut = s[:limit].rstrip()
+    return cut + ellipsis
+
+
+def settle(s: str, limit: int = 60) -> str:
+    """Make a title presentable no matter where it came from.
+
+    Archives carry their own titles and some are already broken by the tool that
+    wrote them -- DSH stores ``你是资料提炼员。把一份 DSH(De``, cut mid-bracket at
+    18 characters. Nothing upstream is going to fix that, and this string becomes
+    a file name, an H1 and every wikilink pointing at the page, so a dangling
+    opener is not cosmetic. Drop it, trim the tail, then tighten if still long.
+    """
+    s = (s or "").strip()
+    if not s:
+        return s
+    at = _first_unclosed(s)
+    if at is not None and at > 0:
+        s = s[:at]
+    s = s.rstrip(" \t·、，。；：,.;:!?！？—-–—")
+    if not s:
+        return (s or "").strip()
+    return tighten(s, limit, "…")
 
 
 def safe_name(s: str, limit: int = 60) -> str:
@@ -59,15 +124,7 @@ def safe_name(s: str, limit: int = 60) -> str:
     s = re.sub(r"\s+", " ", s).strip(" .·-／＼：｜")
     if not s:
         s = "untitled"
-    if len(s) > limit:
-        cut = s[:limit]
-        for sep in (" ", "·", "、", "，", "：", ",", "."):
-            i = cut.rfind(sep)
-            if i > limit * 0.6:
-                cut = cut[:i]
-                break
-        s = cut.rstrip(" -·、，：.,") + "…"
-    return s
+    return tighten(s, limit, "…")
 
 
 def slug(s: str, limit: int = 24) -> str:

@@ -32,7 +32,7 @@ from .render import (
     session_page_name,
     topic_page_name,
 )
-from .util import ensure_dir, sha1, within_days
+from .util import ensure_dir, settle, sha1, within_days
 
 DEFAULT_TITLE = "记忆库"
 DEFAULT_SOURCE = "memloom"
@@ -119,6 +119,19 @@ def load_all(pairs: Sequence[Tuple[str, str]], quiet: bool = False,
 
 
 # ------------------------------------------------------------------ writing
+
+
+def settle_titles(sessions: Dict[str, "Session"]) -> None:
+    """Repair titles the source archive already broke.
+
+    Runs before ``number_duplicate_titles`` on purpose: the 「· 02」 suffix must
+    land on a cleaned title, otherwise the ordinal gets glued to a dangling
+    bracket and the page reads ``…DSH(De · 04``.
+    """
+    for s in sessions.values():
+        fixed = settle(s.title or "")
+        if fixed:
+            s.title = fixed
 
 
 def number_duplicate_titles(sessions: Dict[str, "Session"]) -> None:
@@ -250,6 +263,7 @@ def build(
             continue
         kept[sid] = s
 
+    settle_titles(kept)
     number_duplicate_titles(kept)
 
     factsmap: Dict[str, SessionFacts] = {sid: analyze(s) for sid, s in kept.items()}

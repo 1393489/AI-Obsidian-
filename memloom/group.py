@@ -27,7 +27,7 @@ from .extract import (
     path_component,
     session_texts,
 )
-from .util import is_informative_error, short_tool_name
+from .util import is_informative_error, settle, short_tool_name
 
 __all__ = ["SessionFacts", "Project", "Topic", "analyze", "group_projects", "group_topics"]
 
@@ -79,6 +79,9 @@ class Topic:
     sessions: List[str] = field(default_factory=list)
     evidence: List[str] = field(default_factory=list)
     count: int = 0
+    #: untightened fingerprint, kept so a shortened title that collides with
+    #: another topic can fall back to the full one instead of being dropped
+    raw: str = ""
 
     @property
     def key(self) -> str:
@@ -450,11 +453,16 @@ def group_topics(
             continue  # "Error" / "Failed" on their own name no subject; see util
         topics.append(
             Topic(
-                title=fp,
+                # The fingerprint is capped at 150 chars, which then gets cut again by
+                # safe_name(limit=60) at whatever character happens to land there --
+                # 「踩坑-API Error： N Not enough point. Need N, reduce…」. Tighten here
+                # instead, so the page name ends on a boundary and nothing is cut twice.
+                title=settle(fp, 34),
                 category="踩坑",
                 sessions=_uniq(sids),
                 evidence=[err_sample.get(fp, "")],
                 count=len(sids),
+                raw=fp,
             )
         )
     topics.sort(key=lambda t: -t.count)
@@ -477,13 +485,26 @@ def group_topics(
     topics.extend(tools[:max_tools])
 
     # unique titles (a component and a command may collide)
-    seen, out = set(), []
+    #
+    # Tightening a fingerprint for readability can make two different ones land on
+    # the same title. They are near-identical by construction -- same first 34
+    # characters of the same symptom -- so merge them and union the sessions.
+    # Dropping one deletes a topic; falling back to the full name undoes the
+    # tightening for exactly the long names people complain about.
+    merged: Dict[tuple, Topic] = {}
+    out: List[Topic] = []
     for t in topics:
         k = (t.category, t.title)
-        if k in seen:
+        prev = merged.get(k)
+        if prev is not None:
+            prev.sessions = _uniq(list(prev.sessions) + list(t.sessions))
+            prev.count = len(prev.sessions)
+            if not prev.evidence:
+                prev.evidence = t.evidence
             continue
-        seen.add(k)
+        merged[k] = t
         out.append(t)
+    out.sort(key=lambda t: -t.count)
     return out
 
 
