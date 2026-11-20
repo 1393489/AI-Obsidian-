@@ -114,6 +114,10 @@ python -m memloom scan
 python -m memloom build --out vault
 ```
 
+> **`git clone` 一直连不上？**（国内网络访问 github.com 不稳定，有时能通有时完全没响应）
+> 去 [Releases](https://github.com/KrLito7/memloom/releases/latest) 下那个 **Source code (zip)** —— 164 KB，秒下。
+> 解压后 `cd` 进目录，从上面第 2 步开始跑一模一样的命令。**不需要 git。**
+
 然后用 Obsidian 的「打开文件夹作为仓库」指到 `vault/`。
 
 **跑起来大概是这样**（真实运行录的，不是示意图 —— 136 个会话跑完 14 秒）：
