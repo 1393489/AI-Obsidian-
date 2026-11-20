@@ -116,6 +116,14 @@ python -m memloom build --out vault
 
 然后用 Obsidian 的「打开文件夹作为仓库」指到 `vault/`。
 
+**跑起来大概是这样**（真实运行录的，不是示意图 —— 136 个会话跑完 14 秒）：
+
+<p align="center">
+  <img src="docs/quickstart.gif" alt="doctor 体检 → build 生成整本库的真实终端画面" width="100%">
+</p>
+
+<p align="center"><sub>中间那段空白不是卡住了：它在解 111 个 zstd 存档。</sub></p>
+
 <details>
 <summary><b>Windows 上 <code>python</code> 敲了没反应？</b></summary>
 
@@ -158,21 +166,23 @@ pip install -e ".[zstd]"      # 顺手装 pyzstd，解压更快（不是必需�
 每次 `build` 都在输出目录里留一份 `<out>/.memloom/`：一个 `state.json`（每条档案的 size + mtime_ns + 适配器名）和一份解析结果的缓存。下次跑只有**真的变过的档案**才会被重新解析，其余直接读缓存。缓存只写在你指定的输出目录里，**绝不写进你的档案目录**（那些目录本来就是只读的）。
 
 ```
-$ memloom build --out vault        # 第一次：133 个档案 / 322 MB，全部解析
-会话     131
-主题    62
-页面   205（本次改动 205）
+$ memloom build --out vault        # 第一次：138 个存档，全部解析
+会话     136
+主题    58
+页面   206（本次改动 206）
 项目     9
-缓存   复用 0 / 新解析 131
-耗时   10.9s
+缓存   复用 0 / 新解析 136
+耗时   14.2s
 
-$ memloom build --out vault        # 再跑一次，档案没动
-页面   205（本次改动 0）
-缓存   复用 131 / 新解析 0
-耗时   2.65s
+$ memloom build --out vault        # 再跑一次，其中一份还在长
+页面   206（本次改动 3）
+缓存   复用 135 / 新解析 1
+耗时   2.34s
 ```
 
-（数字取自作者机器 2026-11-18 的一次实测。这些数字每天都在长 —— 你自己跑出来的数量和耗时当然不会一样，看**比例**就行：第二次只剩读缓存和比对的成本。如果某个档案还在增长——比如你正开着别的编辑器边写边跑——那**一份**会重新解析，其余照旧命中。）
+（数字取自作者机器 2026-11-20 在**刚解压的发布包**上的一次实测 —— 就是上面那张 GIF。这些数字每天都在长，你自己跑出来的数量和耗时当然不会一样，看**比例**就行：第二次只剩读缓存和比对的成本。
+
+注意那个 `新解析 1`：作者当时正开着编辑器写东西，所以**恰好有一份档案还在增长**，只有它被重新解析，其余 135 份照旧命中。这正是设计意图 —— 不是「全有或全无」。）
 
 写盘也是增量的：内容没变就不碰文件、只删带生成标记的旧页 —— 所以重复跑是零写入，Obsidian 不会因为一次重建把你看的页面刷掉。缓存坏了、换了版本、想强制重来：`--full` 或直接删掉 `<out>/.memloom/`。
 
@@ -180,8 +190,8 @@ $ memloom build --out vault        # 再跑一次，档案没动
 
 | 来源 | 路径 | 状态 |
 |---|---|---|
-| **DSH** | `~/.dsh/sessions/**/*.zstd` | ✅ 已验证（本机 89 个真实档案 / 69 MB） |
-| **Claude Code** | `~/.claude/projects/<project>/*.jsonl` | ✅ 已验证（本机 27 个真实文件 / 219 MB，最大一个 120 MB） |
+| **DSH** | `~/.dsh/sessions/**/*.zstd` | ✅ 已验证（本机 111 个真实档案 / 106 MB） |
+| **Claude Code** | `~/.claude/projects/<project>/*.jsonl` | ✅ 已验证（本机 27 个真实文件 / 220 MB，最大一个 120 MB） |
 | **Codex** | `~/.codex/sessions/**/*.jsonl` | ⚠️ beta：适配器按已知格式写好，但本机没有 Codex 档案，**未经真实数据验证** |
 
 DSH 的 `.zstd` 是多 frame 拼接的老格式，标准库解不开。memloom 按顺序尝试：`pyzstd` → Python 3.14+ 的 `compression.zstd` → 本机 `node` 的 `zlib.zstdDecompressSync` → `zstd` 命令行；四条路都不通时给一句能照做的报错，而不是 traceback。
